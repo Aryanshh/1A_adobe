@@ -1,0 +1,79 @@
+import fitz  # PyMuPDF
+import os
+import json
+import sys
+
+def get_heading_level(font_size):
+    """Determine heading level based on font size thresholds."""
+    if font_size >= 18:
+        return "H1"
+    elif font_size >= 14:
+        return "H2"
+    elif font_size >= 11:
+        return "H3"
+    return None
+
+def extract_title(doc):
+    """Use first page's largest text block as title."""
+    first_page = doc[0]
+    blocks = first_page.get_text("dict")["blocks"]
+    max_font = 0
+    title = ""
+    for block in blocks:
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                if span['size'] > max_font and span['text'].strip():
+                    max_font = span['size']
+                    title = span['text'].strip()
+    return title
+
+def extract_headings(doc):
+    outline = []
+    for i, page in enumerate(doc, start=1):
+        blocks = page.get_text("dict")["blocks"]
+        for block in blocks:
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    text = span['text'].strip()
+                    if not text or len(text) < 2:
+                        continue
+                    font_size = span['size']
+                    level = get_heading_level(font_size)
+                    if level:
+                        outline.append({
+                            "level": level,
+                            "text": text,
+                            "page": i
+                        })
+    return outline
+
+def main():
+    input_dir = "input"
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
+
+    for file_name in os.listdir(input_dir):
+        if file_name.lower().endswith(".pdf"):
+            input_path = os.path.join(input_dir, file_name)
+            doc = fitz.open(input_path)
+
+            if len(doc) > 50:
+                print(f"Skipping {file_name}: more than 50 pages.")
+                continue
+
+            title = extract_title(doc)
+            headings = extract_headings(doc)
+
+            result = {
+                "title": title or "Untitled",
+                "outline": headings
+            }
+
+            output_path = os.path.join(output_dir, f"{os.path.splitext(file_name)[0]}.json")
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
+
+            print(f"Extracted: {file_name} → {output_path}")
+
+if __name__ == "__main__":
+    main()
