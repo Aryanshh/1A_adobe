@@ -1,42 +1,41 @@
-# 📘 1A_adobe – PDF Outline Extractor
+# 📘 PDF Outline Extractor – Adobe GenAI Hackathon (Round 1A)
 
-> 🚀 Submission for Adobe GenAI Hackathon – Round 1A  
-> 🎯 Theme: *"Connecting the Dots Through Docs"*
+> 🎯 Challenge: **Understand Your Document**  
+> 🧩 Theme: *"Connecting the Dots Through Docs"*
 
-## 🧠 Challenge Brief
+## 🧠 Problem Statement
 
-PDFs are everywhere — but machines don't *understand* them the way humans do.  
-Your mission: Build a tool that extracts a structured outline from a PDF — like a machine would.
-
-This includes:
-- ✅ **Title**
-- ✅ **Headings** with levels (`H1`, `H2`, `H3`) and corresponding **page numbers**
-
-This structured format powers smarter applications like:
-- Semantic search
-- Recommendations
-- Content-aware summarization
+You’re given a PDF. Your task is to extract a structured outline like a machine would:
+- Extract the **Title**
+- Extract all headings (**H1, H2, H3**) along with their **levels** and **page numbers**
+- Output the result in a structured **JSON** format.
 
 ---
 
-## 📥 Input Specification
+## ✅ Our Approach
 
-- Accepts a **PDF** file (max 50 pages)
-- Parses and outputs:
-  - Document Title
-  - Headings with:
-    - `level`: H1, H2, H3
-    - `text`: Heading content
-    - `page`: Page number
+We designed a lightweight and fast rule-based solution without heavy ML models. Here's how it works:
 
-### 📤 Output Format (JSON)
+### 📊 1. Font-Based Heuristics
+- Analyze **font sizes** and **styles** (bold, position, size) using `PyMuPDF`.
+- Cluster font sizes to define H1, H2, H3 levels.
+- Headings are detected based on:
+  - Large, bold text
+  - Distance from other blocks
+  - Position on the page (left-aligned = heading)
 
+### 🏷️ 2. Title Extraction
+- The **largest centered or top-left text** on Page 1 is selected as the title.
+- We avoid generic titles like "Table of Contents" or "Abstract" using keyword filters.
+
+### 📦 3. JSON Output
+- Data is saved in the following format:
 ```json
 {
-  "title": "Understanding AI",
+  "title": "Document Title",
   "outline": [
-    { "level": "H1", "text": "Introduction", "page": 1 },
-    { "level": "H2", "text": "What is AI?", "page": 2 },
-    { "level": "H3", "text": "History of AI", "page": 3 }
+    { "level": "H1", "text": "Main Section", "page": 1 },
+    { "level": "H2", "text": "Subsection", "page": 2 },
+    { "level": "H3", "text": "Detail", "page": 2 }
   ]
 }
